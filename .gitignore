@@ -1,0 +1,9 @@
+docs/
+bin/
+*.class
+
+.vscode/
+.idea/
+*.iml
+bin-pruebas/
+Luz-y-Sombra.jar

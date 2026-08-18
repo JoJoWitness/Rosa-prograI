@@ -1,0 +1,6 @@
+# Los guiones de shell tienen que llegar a Linux y Mac con LF, y los .bat a
+# Windows con CRLF, sin que git los convierta por su cuenta.
+*.sh  text eol=lf
+*.bat text eol=crlf
+*.txt text
+*.java text
