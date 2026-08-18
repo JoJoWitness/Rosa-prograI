@@ -13,6 +13,7 @@ ejecutar() {
   else echo "$salida" | tail -1; fallos=$((fallos+1)); fi
 }
 ejecutar PruebaTeclado    java -cp "$CP" PruebaTeclado
+ejecutar PruebaRaton      java -cp "$CP" PruebaRaton
 ejecutar PruebaFisica     java -Dnivel=$D/pruebas.txt -cp "$CP" PruebaFisica
 ejecutar PruebaReglas     java -Dnivel=$D/pruebas.txt -cp "$CP" PruebaReglas
 ejecutar PruebaMecanismos java -cp "$CP" PruebaMecanismos $D/mecanismos.txt

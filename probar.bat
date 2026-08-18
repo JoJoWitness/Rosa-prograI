@@ -19,6 +19,8 @@ set /a fallos=0
 
 set "CMD=java -cp %CP% PruebaTeclado"
 call :correr PruebaTeclado
+set "CMD=java -cp %CP% PruebaRaton"
+call :correr PruebaRaton
 set "CMD=java -Dnivel=%D%/pruebas.txt -cp %CP% PruebaFisica"
 call :correr PruebaFisica
 set "CMD=java -Dnivel=%D%/pruebas.txt -cp %CP% PruebaReglas"

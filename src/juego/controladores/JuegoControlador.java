@@ -88,9 +88,13 @@ public class JuegoControlador {
             }
         });
 
+        // En ventana, no a pantalla completa: con marco, con su boton de cerrar
+        // y sin tapar el resto del escritorio. El tamano lo pone el Lienzo, que
+        // encoge el juego lo justo para que quepa en la pantalla.
         ventana = new JFrame("Luz y Sombra");
-        ventana.setUndecorated(true);
         ventana.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        // La ventana no se puede estirar: si se pudiera, se deformaria la
+        // proporcion 16:9 con la que estan hechos los niveles y las imagenes.
         ventana.setResizable(false);
         ventana.add(lienzo);
         ventana.pack();
@@ -153,6 +157,10 @@ public class JuegoControlador {
             fps = fps * 0.9 + actual * 0.1;      // media suavizada
         }
         ultimoFrame = ahora;
+
+        // El raton tiene que deshacer la misma cuenta con la que el Lienzo
+        // encoge y centra el dibujo, o los clics caerian donde no toca.
+        raton.ajustarVista(lienzo.escalaVista(), lienzo.margenX(), lienzo.margenY());
 
         // Recargar a mitad del tick deja referencias viejas.
         if (reinicioPendiente) {
@@ -242,7 +250,7 @@ public class JuegoControlador {
             paginaTutorial = 0;
             estado = Estado.TUTORIAL;
         } else if (teclado.estaPresionada(KeyEvent.VK_ESCAPE)) {
-            // La ventana no tiene decoracion: sin esto no habria forma de salir.
+            // Atajo para salir sin tener que ir al boton de cerrar la ventana.
             System.exit(0);
         }
     }

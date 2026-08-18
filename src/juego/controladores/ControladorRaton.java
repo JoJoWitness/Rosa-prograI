@@ -14,17 +14,39 @@ public class ControladorRaton extends MouseAdapter {
     public int ratonX;
     public int ratonY;
 
+    // La ventana se dibuja encogida para caber en la pantalla, pero los botones
+    // estan colocados sobre los 1920x1080 de siempre. Aqui se deshace ese
+    // encogimiento, para que el clic caiga donde el jugador lo esta viendo.
+    private double escala = 1;
+    private int margenX;
+    private int margenY;
+
+    /** Los mismos numeros con los que el Lienzo encoge y centra el dibujo. */
+    public void ajustarVista(double escala, int margenX, int margenY) {
+        this.escala = escala > 0 ? escala : 1;
+        this.margenX = margenX;
+        this.margenY = margenY;
+    }
+
+    private int aJuegoX(int x) {
+        return (int) Math.round((x - margenX) / escala);
+    }
+
+    private int aJuegoY(int y) {
+        return (int) Math.round((y - margenY) / escala);
+    }
+
     @Override
     public void mousePressed(MouseEvent e) {
-        clicX = e.getX();
-        clicY = e.getY();
+        clicX = aJuegoX(e.getX());
+        clicY = aJuegoY(e.getY());
         hayClic = true;
     }
 
     @Override
     public void mouseMoved(MouseEvent e) {
-        ratonX = e.getX();
-        ratonY = e.getY();
+        ratonX = aJuegoX(e.getX());
+        ratonY = aJuegoY(e.getY());
     }
 
     @Override
