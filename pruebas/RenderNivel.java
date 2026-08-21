@@ -10,6 +10,7 @@ import juego.objetos.Elemento;
 import juego.utilidades.Constantes;
 import juego.objetos.Jugador;
 import juego.objetos.Nivel;
+import juego.objetos.Plataforma;
 import juego.utilidades.CargadorNivel;
 
 /** Vuelca un nivel a PNG, tal como lo pinta el juego, para compararlo con la maquetacion. */
@@ -30,6 +31,17 @@ public class RenderNivel {
                 if (Constantes.esPalanca(e.tipo)) e.encendida = true;
             }
             c.actualizar();
+        }
+
+        // "polea": la cuerda tirada del todo, para ver el nivel con el extremo
+        // de arriba abajo y el de abajo arriba.
+        if (args.length > 2 && args[2].equals("polea")) {
+            for (Plataforma p : nivel.plataformas) {
+                if (!p.polea || p.sentidoBase < 0) continue;
+                while (p.desplazamiento < Constantes.RECORRIDO_POLEA) {
+                    p.deslizar(Constantes.RECORRIDO_POLEA);
+                }
+            }
         }
 
         BufferedImage img = new BufferedImage(Constantes.ANCHO, Constantes.ALTO,

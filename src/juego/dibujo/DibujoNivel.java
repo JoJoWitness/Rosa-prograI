@@ -36,6 +36,10 @@ public class DibujoNivel {
     private static final int ALTO_ESPINAS = 34;
     private static final int ALTO_PALANCA = 40;
     private static final int CELDAS_ESPINAS = 3;
+    // La cuerda de la polea cruza el techo por la fila 4,5 y el nudo queda 3
+    // celdas por encima de la losa. Las dos medidas salen de 'docs/3.png'.
+    private static final int ALTO_CUERDA = Constantes.CELDA * 9 / 2;
+    private static final int ALTO_NUDO = Constantes.CELDA * 3;
 
     private static final int SPRITE_ALTO = Constantes.ALTO_JUGADOR * 126 / 100;
     private static final int SPRITE_ANCHO = SPRITE_ALTO * 420 / 594;
@@ -139,25 +143,73 @@ public class DibujoNivel {
 
     private static void dibujarPlataformas(Graphics2D g, Nivel nivel) {
         for (Plataforma p : nivel.plataformas) {
-            int centro = Constantes.MARGEN_X + p.pivoteX;
-            int cuelga = Constantes.MARGEN_Y + p.pivoteY;
-            int techo = cuelga - Constantes.CELDA * 2;
-
-            // Cuerda punteada hasta su anclaje, como en la maquetacion. El
-            // pivote no se mueve, asi que la cuerda ya no se estira.
-            g.setColor(Constantes.COLOR_BLOQUE);
-            g.setStroke(CUERDA);
-            g.drawLine(centro, techo, centro, cuelga);
-            g.fillOval(centro - 6, techo - 6, 12, 12);
-            g.setStroke(SOLIDO);
-
-            // El tablon gira alrededor del punto del que cuelga.
-            AffineTransform antes = g.getTransform();
-            g.rotate(p.angulo, centro, cuelga);
-            pintarImagen(g, Recursos.spriteInferior("plataforma", 26), Constantes.COLOR_BLOQUE,
-                         p.x, p.y, p.ancho, p.alto);
-            g.setTransform(antes);
+            if (p.polea) {
+                dibujarPolea(g, p);
+            } else {
+                dibujarTablon(g, p);
+            }
         }
+    }
+
+    // Cuelga de un solo punto y gira alrededor de el. La cuerda va del anclaje
+    // al pivote, y el pivote no se mueve, asi que no se estira.
+    private static void dibujarTablon(Graphics2D g, Plataforma p) {
+        int centro = Constantes.MARGEN_X + p.pivoteX;
+        int cuelga = Constantes.MARGEN_Y + p.pivoteY;
+        int techo = cuelga - Constantes.CELDA * 2;
+
+        cuerda(g, centro, techo, centro, cuelga);
+        nudo(g, centro, techo);
+
+        AffineTransform antes = g.getTransform();
+        g.rotate(p.angulo, centro, cuelga);
+        losa(g, p, p.y);
+        g.setTransform(antes);
+    }
+
+    /**
+     * La polea de la maquetacion del nivel 2: la losa cuelga de dos cuerdas
+     * que se juntan en un nudo, del nudo sube una hasta el anclaje del techo, y
+     * de anclaje a anclaje cruza el nivel entero. La losa se traslada, asi que
+     * el tramo vertical se estira en un extremo justo lo que se encoge en el
+     * otro; el travesano del techo se pinta una sola vez, desde el extremo que
+     * baja.
+     */
+    private static void dibujarPolea(Graphics2D g, Plataforma p) {
+        int centro = Constantes.MARGEN_X + p.pivoteX;
+        int arriba = Constantes.MARGEN_Y + p.pivoteY + p.desplazamiento;
+        int nudo = arriba - ALTO_NUDO;
+        int techo = Constantes.MARGEN_Y + ALTO_CUERDA;
+
+        cuerda(g, centro, nudo, Constantes.MARGEN_X + p.x, arriba);
+        cuerda(g, centro, nudo, Constantes.MARGEN_X + p.x + p.ancho, arriba);
+        cuerda(g, centro, techo, centro, nudo);
+        nudo(g, centro, nudo);
+        nudo(g, centro, techo);
+
+        if (p.pareja != null && p.sentidoBase > 0) {
+            cuerda(g, centro, techo, Constantes.MARGEN_X + p.pareja.pivoteX, techo);
+        }
+
+        losa(g, p, p.y + p.desplazamiento);
+    }
+
+    // La losa de ladrillo, sin la cuerda que el sprite trae dibujada encima.
+    private static void losa(Graphics2D g, Plataforma p, int y) {
+        pintarImagen(g, Recursos.spriteInferior("plataforma", 26), Constantes.COLOR_BLOQUE,
+                     p.x, y, p.ancho, p.alto);
+    }
+
+    private static void cuerda(Graphics2D g, int x1, int y1, int x2, int y2) {
+        g.setColor(Constantes.COLOR_BLOQUE);
+        g.setStroke(CUERDA);
+        g.drawLine(x1, y1, x2, y2);
+        g.setStroke(SOLIDO);
+    }
+
+    private static void nudo(Graphics2D g, int x, int y) {
+        g.setColor(Constantes.COLOR_BLOQUE);
+        g.fillOval(x - 6, y - 6, 12, 12);
     }
 
     private static void dibujarFondo(Graphics2D g, Nivel nivel) {

@@ -9,28 +9,42 @@ public class Plataforma extends Objeto {
     public final int pivoteY;
 
     /**
-     * Hacia donde cae cuando el peso queda justo en el pivote y no desempata.
-     * Lo fija el simbolo del .txt: 'E' a la derecha, 'F' a la izquierda.
+     * El lado del simbolo. En un tablon ('E' / 'F') es hacia donde cae cuando
+     * el peso queda justo en el pivote y no desempata. En una polea ('e' / 'f')
+     * es que extremo de la cuerda es: +1 el que baja con peso, -1 el que sube.
      */
     public final int sentidoBase;
 
-    /** Inclinacion actual, en radianes. 0 es horizontal. */
+    /** true si cuelga de una polea. Entonces no gira: sube y baja. */
+    public final boolean polea;
+
+    /** El otro extremo de la misma cuerda. Lo ata el cargador; null si no hay. */
+    public Plataforma pareja;
+
+    /** Lo que lleva recorrido desde su sitio de reposo, en pixeles hacia abajo. */
+    public int desplazamiento;
+
+    /** Inclinacion actual, en radianes. 0 es horizontal. Solo la usa el tablon. */
     public double angulo;
 
-    // La celda del simbolo es donde cuelga. Cuelga de su centro, asi que el
-    // peso no la puede bajar: solo inclinarla. Cada tablon va por su cuenta.
-    public Plataforma(int fila, int columna, int celdas, int sentidoBase) {
+    // La celda del simbolo es donde cuelga. El tablon cuelga de su centro, asi
+    // que el peso no lo puede bajar: solo inclinarlo, y cada uno va por su
+    // cuenta. La polea es lo contrario: no se inclina, se traslada, y no va por
+    // su cuenta porque comparte cuerda con el otro extremo.
+    public Plataforma(char simbolo, int fila, int columna, int celdas) {
         super(columna * Constantes.CELDA, fila * Constantes.CELDA,
               celdas * Constantes.CELDA, Constantes.ALTO_PLATAFORMA);
 
-        this.sentidoBase = sentidoBase;
+        this.sentidoBase = Constantes.sentidoDe(simbolo);
+        this.polea = Constantes.esPolea(simbolo);
         this.pivoteX = x + ancho / 2;
         this.pivoteY = y;
     }
 
     /** Altura de la superficie del tablon en esa columna de pixeles. */
     public int alturaEn(int px) {
-        return pivoteY + (int) Math.round((px - pivoteX) * Math.tan(angulo));
+        return pivoteY + desplazamiento
+             + (int) Math.round((px - pivoteX) * Math.tan(angulo));
     }
 
     /** false cuando esta demasiado volcada: entonces no sostiene a nadie. */
@@ -54,6 +68,25 @@ public class Plataforma extends Objeto {
             angulo = Math.min(destino, angulo + Constantes.VEL_GIRO);
         } else if (angulo > destino) {
             angulo = Math.max(destino, angulo - Constantes.VEL_GIRO);
+        }
+    }
+
+    /**
+     * Tira de la cuerda hasta dejar este extremo a {@code destino} pixeles por
+     * debajo de su sitio de reposo. La cuerda no da de si: **lo que baja este
+     * extremo lo sube el otro, y siempre lo mismo**, asi que la pareja se
+     * queda justo al reves. Es la unica regla de la polea; no hay pesos que
+     * sumar ni inercia que acumular.
+     */
+    public void deslizar(int destino) {
+        if (desplazamiento < destino) {
+            desplazamiento = Math.min(destino, desplazamiento + Constantes.VEL_POLEA);
+        } else if (desplazamiento > destino) {
+            desplazamiento = Math.max(destino, desplazamiento - Constantes.VEL_POLEA);
+        }
+
+        if (pareja != null) {
+            pareja.desplazamiento = -desplazamiento;
         }
     }
 }

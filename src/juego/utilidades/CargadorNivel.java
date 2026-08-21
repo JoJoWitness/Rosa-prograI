@@ -40,6 +40,7 @@ public class CargadorNivel {
         }
 
         construirElementos(nivel, simbolos);
+        atarPolea(nivel);
         return nivel;
     }
 
@@ -88,9 +89,8 @@ public class CargadorNivel {
                     // arranca cerrado: solido en el mapa hasta que lo abran
                     nivel.mapa[fila][col] = Constantes.BLOQUE;
                     nivel.muros.add(new int[] { fila, col, Constantes.grupoDe(c) });
-                } else if (Constantes.esPlataforma(c)) {
-                    nivel.plataformas.add(new Plataforma(fila, col, celdas,
-                        Constantes.sentidoDe(c)));
+                } else if (Constantes.esColgante(c)) {
+                    nivel.plataformas.add(new Plataforma(c, fila, col, celdas));
                 } else {
                     nivel.elementos.add(new Elemento(c, fila, col, celdas));
 
@@ -103,6 +103,33 @@ public class CargadorNivel {
 
                 col += celdas - 1;
             }
+        }
+    }
+
+    /**
+     * Ata los dos extremos de la cuerda de la polea. Se busca una tira de 'e'
+     * y una de 'f': el nivel 2 lleva una sola cuerda, la que cruza el techo en
+     * 'docs/3.png', asi que sobra con emparejar el primero de cada clase. Un
+     * extremo suelto se queda sin pareja y sube y baja el solo.
+     */
+    private static void atarPolea(Nivel nivel) {
+        Plataforma baja = null;
+        Plataforma sube = null;
+
+        for (Plataforma p : nivel.plataformas) {
+            if (!p.polea) {
+                continue;
+            }
+            if (p.sentidoBase > 0 && baja == null) {
+                baja = p;
+            } else if (p.sentidoBase < 0 && sube == null) {
+                sube = p;
+            }
+        }
+
+        if (baja != null && sube != null) {
+            baja.pareja = sube;
+            sube.pareja = baja;
         }
     }
 

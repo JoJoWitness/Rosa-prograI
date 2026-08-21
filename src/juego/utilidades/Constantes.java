@@ -68,6 +68,14 @@ public class Constantes {
     public static final char PLATAFORMA = 'E';      // gira a la derecha
     public static final char PLATAFORMA_2 = 'F';    // gira a la izquierda
 
+    // Los dos extremos de la cuerda de una polea, como la que cruza el techo
+    // del nivel 2 en 'docs/3.png'. Estos NO giran: suben y bajan, y van atados
+    // el uno al otro, asi que lo que baja uno lo sube el otro. Cada extremo
+    // arranca en la punta de su recorrido, tal como estan dibujados en la
+    // maquetacion: 'e' colgado arriba y 'f' colgado abajo.
+    public static final char POLEA_BAJA = 'e';      // arranca arriba, baja con peso
+    public static final char POLEA_SUBE = 'f';      // arranca abajo, sube con el otro
+
     // Muro de ladrillos que se quita mientras su grupo esta activado.
     public static final char MURO = 'M';            // grupo 0
     public static final char MURO_2 = 'N';          // grupo 1
@@ -106,14 +114,26 @@ public class Constantes {
 
     public static boolean esBoton(char c)   { return c == BOTON || c == BOTON_2; }
     public static boolean esPalanca(char c) { return c == PALANCA || c == PALANCA_2; }
+    /** Tablon colgante que gira sobre su centro. */
     public static boolean esPlataforma(char c) {
-        // 'e' y 'f' eran el contrapeso de la polea, que ya no existe. Se
-        // aceptan como alias para que un .txt antiguo siga cargando.
-        return c == PLATAFORMA || c == PLATAFORMA_2 || c == 'e' || c == 'f';
+        return c == PLATAFORMA || c == PLATAFORMA_2;
     }
-    /** Hacia donde gira ese tablon: +1 a la derecha, -1 a la izquierda. */
+    /** Extremo de una cuerda de polea: no gira, sube y baja atado al otro. */
+    public static boolean esPolea(char c) {
+        return c == POLEA_BAJA || c == POLEA_SUBE;
+    }
+    /** Colgante de cualquiera de los dos tipos. */
+    public static boolean esColgante(char c) {
+        return esPlataforma(c) || esPolea(c);
+    }
+    /**
+     * El lado del simbolo. En un tablon es hacia donde gira cuando el peso
+     * queda justo en el pivote: +1 a la derecha, -1 a la izquierda. En una
+     * polea es que extremo de la cuerda es: +1 el que baja con peso, -1 el
+     * que sube cuando el otro baja.
+     */
     public static int sentidoDe(char c) {
-        return (c == PLATAFORMA || c == 'e') ? 1 : -1;
+        return (c == PLATAFORMA || c == POLEA_BAJA) ? 1 : -1;
     }
 
     public static boolean esMuro(char c) { return c == MURO || c == MURO_2 || c == MURO_AMBOS; }
@@ -141,6 +161,18 @@ public class Constantes {
     // cara ya no vuelve a coger: cuesta arriba te hundes y cuesta abajo flotas,
     // y en los dos casos se cuela de largo.
     public static final int PEGADO_TABLON = 8;
+
+    // Cuanto se mueve cada extremo de la polea desde su sitio de reposo: las 12
+    // celdas que separan las dos losas del nivel 2 en la maquetacion, la de la
+    // fila 10 y la de la fila 22. Tirando de la cuerda del todo, cada extremo
+    // acaba justo donde estaba el otro: se intercambian la altura. Los dos
+    // huecos por los que corren estan libres de bloques de punta a punta.
+    public static final int RECORRIDO_POLEA = 12 * CELDA;
+    // Pixeles por frame. Con 4 px el recorrido entero cuesta 123 frames, dos
+    // segundos, que es lo que tarda un ascensor en cruzar medio nivel. Se queda
+    // en la mitad de PEGADO_TABLON, asi que el que va encima no se despega ni
+    // al subir ni al bajar.
+    public static final int VEL_POLEA = 4;
 
     public static final Color COLOR_FONDO = new Color(172, 148, 123);
     public static final Color COLOR_MARCO = new Color(56, 48, 40);

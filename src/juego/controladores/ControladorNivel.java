@@ -116,35 +116,61 @@ public class ControladorNivel {
     }
 
     /**
-     * Las plataformas cuelgan de su centro, asi que el peso no las puede bajar:
-     * solo inclinarlas. En cuanto alguien se sube, el tablon empieza a girar
-     * hacia su lado y no para; pasado ANG_CAIDA deja de sostener y el que va
-     * encima se cae. Al quedarse sola vuelve sola a la horizontal.
+     * Los dos colgantes del juego, cada uno con su regla de una sola linea.
      *
-     * **Cada tablon va por su cuenta.** No hay grupos ni parejas: solo cuenta
-     * quien esta encima de el. Antes iban acoplados por grupo y pisar uno movia
-     * al otro, que es lo que hacia que en el nivel 2 las dos plataformas 'E'
-     * bajaran a la vez estando en extremos opuestos del mapa.
+     * **Tablon ('E' / 'F').** Cuelga de su centro, asi que el peso no lo puede
+     * bajar: solo inclinarlo. En cuanto alguien se sube empieza a girar hacia
+     * su lado y no para; pasado ANG_CAIDA deja de sostener y el que va encima
+     * se cae. Al quedarse solo vuelve solo a la horizontal. **Cada tablon va
+     * por su cuenta**: no hay grupos ni parejas, solo cuenta quien esta encima.
      *
-     * El tablon cae hacia el lado por el que le tira el peso, asi que ponerse a
-     * un lado o al otro del punto del que cuelga cambia hacia donde vuelca.
-     * Pero no es un balancin: la inclinacion no se queda a medias segun lo
-     * lejos que este el peso del pivote, sigue cayendo hasta el tope.
+     * **Polea ('e' / 'f').** No gira: sube y baja, y los dos extremos van
+     * atados a la misma cuerda, la que cruza el techo en la maquetacion del
+     * nivel 2. La regla es de dos ramas y manda siempre el extremo 'e', que es
+     * el que arranca arriba: si lleva peso baja hasta el fondo de su recorrido
+     * y la 'f' sube otro tanto; si no lo lleva, los dos vuelven a su sitio.
+     * Lo que baja uno lo sube el otro, y al reves.
+     *
+     * De ahi sale el ascensor de dos: uno se sube a la 'f', el otro se planta
+     * en la 'e' y la 'f' se lo lleva arriba; en cuanto el de la 'e' se aparta,
+     * la 'f' lo devuelve abajo.
      */
     private void actualizarPlataformas() {
         for (Plataforma p : nivel.plataformas) {
+            // El extremo que sube no manda sobre nada: lo mueve su pareja. La
+            // cuerda se resuelve una sola vez, desde el extremo que baja.
+            if (p.polea && p.sentidoBase < 0 && p.pareja != null) {
+                continue;
+            }
+
             boolean llevaLuz = vaEncima(luz, p);
             boolean llevaSombra = vaEncima(sombra, p);
 
-            p.girar(ladoDelPeso(p, llevaLuz, llevaSombra));
+            // Quien viaja en el otro extremo hay que mirarlo ANTES de mover la
+            // cuerda, igual que en este: despues ya no coincide con los pies.
+            Plataforma otro = p.polea ? p.pareja : null;
+            boolean llevaLuzOtro = otro != null && vaEncima(luz, otro);
+            boolean llevaSombraOtro = otro != null && vaEncima(sombra, otro);
+
+            if (p.polea) {
+                p.deslizar(llevaLuz || llevaSombra ? Constantes.RECORRIDO_POLEA : 0);
+            } else {
+                p.girar(ladoDelPeso(p, llevaLuz, llevaSombra));
+            }
 
             // Al que va de pie encima se le pega a la nueva superficie: si no,
-            // se queda flotando cuando el tablon baja y lo atraviesa al subir.
+            // se queda flotando cuando el colgante baja y lo atraviesa al subir.
             if (llevaLuz) {
                 posarEn(luz, p);
             }
             if (llevaSombra) {
                 posarEn(sombra, p);
+            }
+            if (llevaLuzOtro) {
+                posarEn(luz, otro);
+            }
+            if (llevaSombraOtro) {
+                posarEn(sombra, otro);
             }
         }
     }

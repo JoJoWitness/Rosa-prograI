@@ -19,7 +19,7 @@ ejecutar PruebaTeclado    java $SIN_SONIDO -cp "$CP" PruebaTeclado
 ejecutar PruebaRaton      java $SIN_SONIDO -cp "$CP" PruebaRaton
 ejecutar PruebaFisica     java $SIN_SONIDO -Dnivel=$D/pruebas.txt -cp "$CP" PruebaFisica
 ejecutar PruebaReglas     java $SIN_SONIDO -Dnivel=$D/pruebas.txt -cp "$CP" PruebaReglas
-ejecutar PruebaMecanismos java $SIN_SONIDO -cp "$CP" PruebaMecanismos $D/mecanismos.txt
+ejecutar PruebaMecanismos java $SIN_SONIDO -cp "$CP" PruebaMecanismos $D/mecanismos.txt $D/polea.txt
 ejecutar PruebaNiveles    java $SIN_SONIDO -cp "$CP" PruebaNiveles
 ejecutar PruebaSalto      java $SIN_SONIDO -cp "$CP" PruebaSalto $D
 ejecutar PruebaJugable    java $SIN_SONIDO -Xss16m -cp "$CP" PruebaJugable

@@ -6,12 +6,25 @@ public class PruebaMecanismos {
     static int fallos = 0;
     static final int C = Constantes.CELDA;
     static String ruta;
+    static String rutaPolea;
 
     static void ok(String n, boolean c, String d) {
         System.out.println((c ? "  OK   " : "  FALLA") + "  " + n + "   " + d);
         if (!c) fallos++;
     }
     static ControladorNivel nuevo() { return new ControladorNivel(CargadorNivel.cargar(ruta, "")); }
+    static ControladorNivel nuevaPolea() { return new ControladorNivel(CargadorNivel.cargar(rutaPolea, "")); }
+    /** El extremo de la cuerda que baja con peso ('e') o el que sube ('f'). */
+    static Plataforma extremo(ControladorNivel n, int sentido) {
+        for (Plataforma p : n.nivel.plataformas) if (p.polea && p.sentidoBase == sentido) return p;
+        return null;
+    }
+    /** Deja al jugador de pie en el centro del colgante, sin sujetarlo despues. */
+    static void plantarEn(Jugador j, Plataforma p) {
+        j.x = p.pivoteX - j.ancho / 2;
+        j.y = p.alturaEn(p.pivoteX) - j.alto;
+        j.velX = 0; j.velY = 0; j.enSuelo = true;
+    }
     /** El tablon cuyo simbolo es 'E' (sentidoBase +1) o 'F' (-1). */
     static Plataforma tablon(ControladorNivel n, int sentidoBase) {
         for (Plataforma p : n.nivel.plataformas) if (p.sentidoBase == sentidoBase) return p;
@@ -42,6 +55,7 @@ public class PruebaMecanismos {
 
     public static void main(String[] a) {
         ruta = a[0];
+        rutaPolea = a[1];
         ControladorNivel n = nuevo();
         System.out.println("plataformas=" + n.nivel.plataformas.size()
             + "  muros=" + n.nivel.muros.size() + "  elementos=" + n.nivel.elementos.size());
@@ -178,7 +192,84 @@ public class PruebaMecanismos {
         for (int i=0;i<10;i++) n.actualizar();
         ok("volver a tocarla no la deshace", n.nivel.mapa[mp[0]][mp[1]] == Constantes.VACIO, "");
 
+        polea();
+
         System.out.println(fallos == 0 ? "\nTODAS LAS PRUEBAS PASAN" : "\n" + fallos + " PRUEBA(S) FALLAN");
         System.exit(fallos == 0 ? 0 : 1);
+    }
+
+    /**
+     * La polea del nivel 2: dos extremos atados a la misma cuerda. El que
+     * arranca arriba ('e') es el que baja con peso, y lo que baja lo sube el
+     * otro, siempre lo mismo y siempre al reves.
+     */
+    static void polea() {
+        System.out.println("--- polea ---");
+        ControladorNivel n = nuevaPolea();
+        Plataforma baja = extremo(n, 1), sube = extremo(n, -1);
+        ok("hay los dos extremos de la cuerda", baja != null && sube != null, "");
+        ok("estan atados el uno al otro", baja.pareja == sube && sube.pareja == baja, "");
+        ok("no giran: la polea no es un tablon", baja.angulo == 0 && sube.angulo == 0, "");
+
+        int reposoBaja = baja.alturaEn(baja.pivoteX);
+        int reposoSube = sube.alturaEn(sube.pivoteX);
+
+        // --- sin nadie encima se quedan donde los pone el .txt ---
+        enSuelo(n.luz, 3); enSuelo(n.sombra, 30);
+        for (int i = 0; i < 120; i++) n.actualizar();
+        ok("en reposo no se mueven",
+           baja.desplazamiento == 0 && sube.desplazamiento == 0, "");
+
+        // --- peso en el extremo que baja: uno baja y el otro sube igual ---
+        n = nuevaPolea();
+        baja = extremo(n, 1); sube = extremo(n, -1);
+        enSuelo(n.sombra, 20);
+        encimaDe(n, n.luz, baja, baja.pivoteX, 30);
+        ok("con peso el extremo de arriba baja", baja.desplazamiento > 0,
+           baja.desplazamiento + " px");
+        ok("y el otro sube exactamente lo mismo", sube.desplazamiento == -baja.desplazamiento,
+           sube.desplazamiento + " px");
+        ok("la superficie sigue el desplazamiento",
+           baja.alturaEn(baja.pivoteX) == reposoBaja + baja.desplazamiento
+           && sube.alturaEn(sube.pivoteX) == reposoSube + sube.desplazamiento, "");
+
+        encimaDe(n, n.luz, baja, baja.pivoteX, 300);
+        ok("no se pasa del recorrido", baja.desplazamiento == Constantes.RECORRIDO_POLEA,
+           baja.desplazamiento + " de " + Constantes.RECORRIDO_POLEA + " px");
+
+        // --- al quitar el peso los dos vuelven a su sitio ---
+        enSuelo(n.luz, 20);
+        for (int i = 0; i < 300; i++) n.actualizar();
+        ok("sin peso vuelven a su sitio",
+           baja.desplazamiento == 0 && sube.desplazamiento == 0, "");
+
+        // --- el extremo de abajo ya esta en el fondo: su peso no hace nada ---
+        n = nuevaPolea();
+        baja = extremo(n, 1); sube = extremo(n, -1);
+        enSuelo(n.sombra, 20);
+        encimaDe(n, n.luz, sube, sube.pivoteX, 60);
+        ok("el peso en el extremo de abajo no mueve la cuerda",
+           baja.desplazamiento == 0 && sube.desplazamiento == 0, "");
+
+        // --- el ascensor de dos: uno hace de contrapeso y el otro sube ---
+        n = nuevaPolea();
+        baja = extremo(n, 1); sube = extremo(n, -1);
+        plantarEn(n.luz, sube);
+        int antes = n.luz.y;
+        for (int i = 0; i < 200; i++) {                 // Sombra hace de peso
+            n.sombra.x = baja.pivoteX - n.sombra.ancho / 2;
+            n.sombra.y = baja.alturaEn(baja.pivoteX) - n.sombra.alto;
+            n.sombra.velY = 0; n.sombra.enSuelo = true;
+            n.actualizar();
+        }
+        ok("el que va en el otro extremo sube con la losa",
+           n.luz.y == antes - Constantes.RECORRIDO_POLEA && n.luz.vivo,
+           "y " + antes + " -> " + n.luz.y);
+
+        // y al apartarse el contrapeso, lo devuelve abajo
+        enSuelo(n.sombra, 20);
+        for (int i = 0; i < 300; i++) n.actualizar();
+        ok("y al apartarse el contrapeso vuelve abajo", n.luz.y == antes,
+           "y " + n.luz.y);
     }
 }
