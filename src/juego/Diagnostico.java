@@ -20,6 +20,13 @@ public class Diagnostico {
         "assets/fondos/nivel1.png",
         "assets/sprites/luz_quieto.png",
         "assets/sprites/sombra_quieto.png",
+        "assets/sonidos/palanca.wav",
+        "assets/sonidos/boton.wav",
+        "assets/sonidos/albor.wav",
+        "assets/sonidos/obsidiana.wav",
+        "assets/sonidos/puerta.wav",
+        "assets/sonidos/gameover.wav",
+        "assets/sonidos/musica.wav",
     };
 
     public static void main(String[] args) {

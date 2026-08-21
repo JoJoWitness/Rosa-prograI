@@ -116,31 +116,47 @@ public class DibujoNivel {
     }
 
     // El muro solo se ve cuando esta puesto; al abrirlo desaparece del mapa.
+    // El que cruza esta siempre, en uno de sus dos sitios: basta con pintar el
+    // que en este momento sea solido.
     private static void dibujarMuros(Graphics2D g, Nivel nivel) {
         for (int[] m : nivel.muros) {
-            if (nivel.mapa[m[0]][m[1]] != Constantes.BLOQUE) {
-                continue;
-            }
-            pintar(g, m[2] == 1 ? "pared_clara" : "pared", Constantes.COLOR_BLOQUE,
-                   m[1] * Constantes.CELDA, m[0] * Constantes.CELDA,
-                   Constantes.CELDA, Constantes.CELDA);
+            pintarMuro(g, nivel, m[0], m[1], m[2]);
         }
+        for (int[] m : nivel.murosCruzan) {
+            pintarMuro(g, nivel, m[0], m[1], m[3]);
+            pintarMuro(g, nivel, m[0], m[2], m[3]);
+        }
+    }
+
+    private static void pintarMuro(Graphics2D g, Nivel nivel, int fila, int col, int grupo) {
+        if (nivel.mapa[fila][col] != Constantes.BLOQUE) {
+            return;
+        }
+        pintar(g, grupo == 1 ? "pared_clara" : "pared", Constantes.COLOR_BLOQUE,
+               col * Constantes.CELDA, fila * Constantes.CELDA,
+               Constantes.CELDA, Constantes.CELDA);
     }
 
     private static void dibujarPlataformas(Graphics2D g, Nivel nivel) {
         for (Plataforma p : nivel.plataformas) {
-            int centro = Constantes.MARGEN_X + p.x + p.ancho / 2;
-            int techo = Constantes.MARGEN_Y + Math.min(p.yReposo, p.yActiva) - Constantes.CELDA * 2;
+            int centro = Constantes.MARGEN_X + p.pivoteX;
+            int cuelga = Constantes.MARGEN_Y + p.pivoteY;
+            int techo = cuelga - Constantes.CELDA * 2;
 
-            // Cuerda punteada hasta su anclaje, como en la maquetacion.
+            // Cuerda punteada hasta su anclaje, como en la maquetacion. El
+            // pivote no se mueve, asi que la cuerda ya no se estira.
             g.setColor(Constantes.COLOR_BLOQUE);
             g.setStroke(CUERDA);
-            g.drawLine(centro, techo, centro, Constantes.MARGEN_Y + p.y);
+            g.drawLine(centro, techo, centro, cuelga);
             g.fillOval(centro - 6, techo - 6, 12, 12);
             g.setStroke(SOLIDO);
 
+            // El tablon gira alrededor del punto del que cuelga.
+            AffineTransform antes = g.getTransform();
+            g.rotate(p.angulo, centro, cuelga);
             pintarImagen(g, Recursos.spriteInferior("plataforma", 26), Constantes.COLOR_BLOQUE,
                          p.x, p.y, p.ancho, p.alto);
+            g.setTransform(antes);
         }
     }
 
@@ -190,6 +206,10 @@ public class DibujoNivel {
         boolean[][] esMuro = new boolean[nivel.filas][nivel.columnas];
         for (int[] m : nivel.muros) {
             esMuro[m[0]][m[1]] = true;
+        }
+        for (int[] m : nivel.murosCruzan) {
+            esMuro[m[0]][m[1]] = true;
+            esMuro[m[0]][m[2]] = true;
         }
 
         g.setColor(Constantes.COLOR_BLOQUE);

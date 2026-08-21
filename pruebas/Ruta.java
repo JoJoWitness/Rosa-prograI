@@ -29,12 +29,12 @@ public class Ruta {
             boolean quita = Constantes.muroQuitado(mu[2], abiertos);
             mapa[mu[0]][mu[1]] = quita ? Constantes.VACIO : Constantes.BLOQUE;
         }
-        this.plataformas = new ArrayList<Plataforma>();
-        for (Plataforma p : nivel.plataformas) {          // en reposo: nadie las pisa
-            Plataforma c = new Plataforma(0, 0, 1, p.baja, p.grupo);
-            c.x = p.x; c.ancho = p.ancho; c.alto = p.alto; c.y = p.yReposo;
-            plataformas.add(c);
+        for (int[] mu : nivel.murosCruzan) {          // no se quita: cambia de lado
+            boolean cruza = Constantes.muroQuitado(mu[3], abiertos);
+            mapa[mu[0]][mu[1]] = cruza ? Constantes.VACIO : Constantes.BLOQUE;
+            mapa[mu[0]][mu[2]] = cruza ? Constantes.BLOQUE : Constantes.VACIO;
         }
+        this.plataformas = nivel.plataformas;             // en reposo: nadie las pisa
     }
 
     static long clave(int x, int y) { return ((long)(x / BIN) << 20) | (y & 0xFFFFF); }

@@ -55,36 +55,47 @@ public class Constantes {
     public static final char PUERTA_LUZ = 'P';
     public static final char PUERTA_SOMBRA = 'Q';
 
-    // Mecanismos. Cada uno pertenece a un grupo: un boton solo manda sobre las
-    // plataformas de su grupo, lo que permite cruzarlos (el boton de la derecha
-    // mueve la plataforma de la izquierda y viceversa).
+    // Interruptores. Cada uno pertenece a un grupo y manda sobre los muros de
+    // ese grupo, lo que permite cruzarlos (la palanca de la derecha abre el
+    // muro de la izquierda y viceversa). Las plataformas no llevan grupo.
     public static final char BOTON = 'b';           // grupo 0
     public static final char BOTON_2 = 'c';         // grupo 1
     public static final char PALANCA = 'v';         // grupo 0
     public static final char PALANCA_2 = 'w';       // grupo 1
-    // Las plataformas NO las mueven los botones: las mueve el peso. Cuelgan en
-    // el aire y bajan mientras alguien esta encima, como en Fireboy & Watergirl.
-    public static final char PLATAFORMA = 'E';      // grupo 0, baja con peso
-    public static final char PLATAFORMA_INV = 'e';  // grupo 0, contrapeso: sube
-    public static final char PLATAFORMA_2 = 'F';    // grupo 1, baja con peso
-    public static final char PLATAFORMA_2_INV = 'f';// grupo 1, contrapeso: sube
+    // Las plataformas NO las mueven los botones y NO bajan: giran. Cuelgan de
+    // su centro, asi que el peso solo puede inclinarlas. Cada tablon va por su
+    // cuenta: no hay grupos ni parejas, solo cuenta quien esta encima de el.
+    public static final char PLATAFORMA = 'E';      // gira a la derecha
+    public static final char PLATAFORMA_2 = 'F';    // gira a la izquierda
 
     // Muro de ladrillos que se quita mientras su grupo esta activado.
     public static final char MURO = 'M';            // grupo 0
     public static final char MURO_2 = 'N';          // grupo 1
     // Muro doble: no basta con un grupo, hacen falta los dos a la vez.
     public static final char MURO_AMBOS = 'D';
+    // Muro que CRUZA: no se quita, se pasa al otro lado del pilar del que sale.
+    // Es una repisa de una celda que va y viene, y como el pilar la parte por
+    // la mitad, sirve de escalon a un pozo o al otro, nunca a los dos.
+    public static final char MURO_CRUZA = 'm';      // grupo 0, oscuro
+    public static final char MURO_CRUZA_2 = 'n';    // grupo 1, claro
 
     public static final int GRUPOS = 2;
 
-    /** Grupo ficticio del muro doble: no es un grupo, es "todos a la vez". */
+    /**
+     * El paso a la sala de las puertas no pertenece a ningun grupo: lo abre
+     * cualquier placa pisada, y solo mientras se pisa. Lleva su propia ranura
+     * al final del array, detras de los grupos de verdad.
+     */
     public static final int GRUPO_AMBOS = GRUPOS;
+
+    /** Tamano del array de grupos: los GRUPOS de verdad mas la ranura del paso. */
+    public static final int RANURAS = GRUPOS + 1;
 
     public static int grupoDe(char simbolo) {
         switch (simbolo) {
-            case BOTON: case PALANCA: case PLATAFORMA: case PLATAFORMA_INV: case MURO:
+            case BOTON: case PALANCA: case MURO: case MURO_CRUZA:
                 return 0;
-            case BOTON_2: case PALANCA_2: case PLATAFORMA_2: case PLATAFORMA_2_INV: case MURO_2:
+            case BOTON_2: case PALANCA_2: case MURO_2: case MURO_CRUZA_2:
                 return 1;
             case MURO_AMBOS:
                 return GRUPO_AMBOS;
@@ -96,32 +107,40 @@ public class Constantes {
     public static boolean esBoton(char c)   { return c == BOTON || c == BOTON_2; }
     public static boolean esPalanca(char c) { return c == PALANCA || c == PALANCA_2; }
     public static boolean esPlataforma(char c) {
-        return c == PLATAFORMA || c == PLATAFORMA_INV
-            || c == PLATAFORMA_2 || c == PLATAFORMA_2_INV;
+        // 'e' y 'f' eran el contrapeso de la polea, que ya no existe. Se
+        // aceptan como alias para que un .txt antiguo siga cargando.
+        return c == PLATAFORMA || c == PLATAFORMA_2 || c == 'e' || c == 'f';
     }
-    /** true si la plataforma baja al haber peso; false si es el contrapeso. */
-    public static boolean plataformaBaja(char c) {
-        return c == PLATAFORMA || c == PLATAFORMA_2;
+    /** Hacia donde gira ese tablon: +1 a la derecha, -1 a la izquierda. */
+    public static int sentidoDe(char c) {
+        return (c == PLATAFORMA || c == 'e') ? 1 : -1;
     }
 
     public static boolean esMuro(char c) { return c == MURO || c == MURO_2 || c == MURO_AMBOS; }
+    public static boolean esMuroQueCruza(char c) { return c == MURO_CRUZA || c == MURO_CRUZA_2; }
 
     /** true si al muro de ese grupo le toca estar quitado. */
     public static boolean muroQuitado(int grupo, boolean[] abiertos) {
-        if (grupo == GRUPO_AMBOS) {
-            for (boolean a : abiertos) {
-                if (!a) {
-                    return false;
-                }
-            }
-            return true;
-        }
         return grupo >= 0 && grupo < abiertos.length && abiertos[grupo];
     }
 
     public static final int ALTO_PLATAFORMA = 28;
-    public static final int RECORRIDO_PLATAFORMA = 2 * CELDA;
-    public static final int VEL_PLATAFORMA = 3;
+    // Tope de inclinacion, 34 grados. Lo que se llega a ver de pie es hasta
+    // ANG_CAIDA (26 grados), que es donde el tablon deja de sostener: la punta
+    // de uno de 4 celdas baja para entonces 40 px, casi una celda entera.
+    public static final double ANG_MAX = 0.60;
+    public static final double ANG_CAIDA = 0.45;
+    // Radianes por frame. Se mantienen los 60 frames de pie hasta que suelta
+    // (0,45 / 0,0075): cruzar el tablon mas largo del juego, el de 7 celdas del
+    // nivel 4, cuesta 41 frames, asi que el margen no cambia al inclinarse mas.
+    public static final double VEL_GIRO = 0.0075;
+    // Cuanto se le perdona a los pies para seguir contando como apoyados en el
+    // tablon. Andando sobre el ya inclinado, la superficie se mueve bajo los
+    // pies VEL_X * tan(ANG_CAIDA) = 3,4 px por frame, mas 0,8 del giro. Sin
+    // margen se pierde el apoyo en un frame, y como el tablon es de una sola
+    // cara ya no vuelve a coger: cuesta arriba te hundes y cuesta abajo flotas,
+    // y en los dos casos se cuela de largo.
+    public static final int PEGADO_TABLON = 8;
 
     public static final Color COLOR_FONDO = new Color(172, 148, 123);
     public static final Color COLOR_MARCO = new Color(56, 48, 40);

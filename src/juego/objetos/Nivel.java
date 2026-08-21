@@ -9,6 +9,8 @@ public class Nivel {
     public ArrayList<Plataforma> plataformas;
     /** Celdas de muro movil: {fila, columna, grupo}. */
     public ArrayList<int[]> muros;
+    /** Muros que cruzan el pilar: {fila, colReposo, colCruzada, grupo}. */
+    public ArrayList<int[]> murosCruzan;
 
     public int filas;
     public int columnas;
@@ -31,5 +33,6 @@ public class Nivel {
         this.elementos = new ArrayList<Elemento>();
         this.plataformas = new ArrayList<Plataforma>();
         this.muros = new ArrayList<int[]>();
+        this.murosCruzan = new ArrayList<int[]>();
     }
 }

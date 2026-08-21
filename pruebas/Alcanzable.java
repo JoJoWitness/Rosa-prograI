@@ -23,13 +23,14 @@ public class Alcanzable {
     final Nivel nivel;
     final int tipo;
     final char[][][] mapas;                   // [cerrado, abierto]
-    final List<List<Plataforma>> plataformas;
+    /** Los tablones colgantes, planos: nadie llama a girar() desde aqui. */
+    final List<Plataforma> plataformas;
 
     Alcanzable(Nivel nivel, int tipo, boolean[] abiertos) {
         this.nivel = nivel;
         this.tipo = tipo;
         this.mapas = new char[2][][];
-        this.plataformas = new ArrayList<List<Plataforma>>();
+        this.plataformas = nivel.plataformas;
 
         for (int v = 0; v < 2; v++) {
             char[][] m = new char[nivel.filas][];
@@ -40,16 +41,12 @@ public class Alcanzable {
                 boolean seQuita = v == 1 && Constantes.muroQuitado(mu[2], abiertos);
                 m[mu[0]][mu[1]] = seQuita ? Constantes.VACIO : Constantes.BLOQUE;
             }
-            mapas[v] = m;
-
-            List<Plataforma> ps = new ArrayList<Plataforma>();
-            for (Plataforma p : nivel.plataformas) {
-                Plataforma copia = new Plataforma(0, 0, 1, p.baja, p.grupo);
-                copia.x = p.x; copia.ancho = p.ancho; copia.alto = p.alto;
-                copia.y = (v == 1) ? p.yActiva : p.yReposo;
-                ps.add(copia);
+            for (int[] mu : nivel.murosCruzan) {      // no se quita: cambia de lado
+                boolean cruza = v == 1 && Constantes.muroQuitado(mu[3], abiertos);
+                m[mu[0]][mu[1]] = cruza ? Constantes.VACIO : Constantes.BLOQUE;
+                m[mu[0]][mu[2]] = cruza ? Constantes.BLOQUE : Constantes.VACIO;
             }
-            plataformas.add(ps);
+            mapas[v] = m;
         }
     }
 
@@ -110,7 +107,7 @@ public class Alcanzable {
     int[] asentar(int x, int y, int v) {
         Jugador j = nuevo(x, y);
         for (int i = 0; i < 300; i++) {
-            Colisiones.mover(j, mapas[v], plataformas.get(v));
+            Colisiones.mover(j, mapas[v], plataformas);
             if (mortal(j)) return null;
             if (j.enSuelo) return new int[] { j.x, j.y };
         }
@@ -122,7 +119,7 @@ public class Alcanzable {
         if (salta) j.saltar();
         for (int i = 0; i < 260; i++) {
             j.velX = (i < hold) ? dir * Constantes.VEL_X : 0;
-            Colisiones.mover(j, mapas[v], plataformas.get(v));
+            Colisiones.mover(j, mapas[v], plataformas);
             if (mortal(j)) return null;
             if (j.enSuelo && i >= 2) {
                 if (j.x == x && j.y == y) return null;

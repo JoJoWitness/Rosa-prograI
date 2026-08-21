@@ -26,6 +26,9 @@ public class DibujoMenu {
     private static final Font FUENTE_TEXTO = new Font("SansSerif", Font.PLAIN, 30);
     private static final Font FUENTE_MARCA = new Font("Serif", Font.BOLD | Font.ITALIC, 120);
 
+    /** Centro horizontal del panel de los menus (110..1810). */
+    private static final int CENTRO = 960;
+
     public static void fondoMenus(Graphics2D g) {
         BufferedImage img = Recursos.fondo("menus");
         if (img != null) {
@@ -37,16 +40,10 @@ public class DibujoMenu {
     }
 
     public static void menuPrincipal(Graphics2D g, Boton jugar, Boton tutorial, int mx, int my) {
+        // La portada ya trae dibujados los dos personajes y el nombre del
+        // juego, asi que aqui no se pinta ninguno de los dos: se hacia cuando
+        // el fondo era una textura lisa, y sobre la portada salia todo doble.
         fondoMenus(g);
-
-        personaje(g, "luz_quieto", 1075, 210, 300, 430);
-        personaje(g, "sombra_quieto", 800, 60, 330, 470);
-
-        g.setFont(FUENTE_MARCA);
-        g.setColor(PAPEL);
-        g.drawString("Luz", 545, 640);
-        g.setColor(TINTA);
-        g.drawString("Sombra", 660, 730);
 
         boton(g, jugar, mx, my);
         boton(g, tutorial, mx, my);
@@ -85,31 +82,45 @@ public class DibujoMenu {
         g.drawRoundRect(110, 275, 1700, 690, 40, 40);
 
         if (pagina == 0) {
-            personaje(g, "luz_quieto", 150, 320, 200, 290);
-            personaje(g, "sombra_quieto", 1590, 320, 200, 290);
-            parrafo(g, 330, 400, new String[] {
+            // Cada personaje a la altura de SU bloque: Luz arriba a la
+            // izquierda y Sombra abajo a la derecha. Antes los dos estaban
+            // arriba y el texto de Sombra caia lejos de ella.
+            personaje(g, "luz_quieto", 170, 330, 200, 290);
+            personaje(g, "sombra_quieto", 1560, 620, 200, 290);
+            parrafoCentrado(g, CENTRO, 420, new String[] {
                 "Utiliza las teclas A, W, D para mover a Luz.",
                 "Luz no puede atravesar las penumbras.",
                 "Ayudala a recolectar el Albor." });
-            parrafo(g, 330, 680, new String[] {
+            parrafoCentrado(g, CENTRO, 710, new String[] {
                 "Utiliza las flechas para mover a Sombra.",
                 "Sombra no puede pasar por la luminosidad.",
                 "Ayudalo a recolectar las Obsidianas." });
         } else if (pagina == 1) {
-            elemento(g, "albor", 640, 400, 150);
-            elemento(g, "obsidiana", 1120, 400, 150);
-            etiqueta(g, "ALBOR", 640, 640);
-            etiqueta(g, "OBSIDIANA", 1120, 640);
-            parrafo(g, 330, 740, new String[] {
+            // Las dos columnas repartidas a los lados del centro del panel:
+            // estaban en 640 y 1120, o sea centradas en 880 y no en 960.
+            int izq = CENTRO - 240;
+            int der = CENTRO + 240;
+            elemento(g, "albor", izq, 430, 150);
+            elemento(g, "obsidiana", der, 430, 150);
+            etiqueta(g, "ALBOR", izq, 640);
+            etiqueta(g, "OBSIDIANA", der, 640);
+            parrafoCentrado(g, CENTRO, 780, new String[] {
                 "El Albor de la manana que ilumina el nuevo mundo.",
                 "La Obsidiana de la tierra que forja el nuevo mundo." });
         } else {
-            elemento(g, "pozo_luminoso", 380, 400, 120);
-            elemento(g, "pozo_penumbra", 380, 600, 120);
-            elemento(g, "espinas", 1400, 500, 160);
-            parrafo(g, 560, 400, new String[] { "La Luminosidad puede extinguir a Sombra." });
-            parrafo(g, 560, 610, new String[] { "Las Penumbras pueden apagar a Luz." });
-            parrafo(g, 1150, 790, new String[] { "Las puas danan a Luz y a Sombra." });
+            // Tres filas iguales: el dibujo en una caja fija a la izquierda y
+            // el texto siempre arrancando en la misma columna.
+            int[] filas = { 390, 620, 850 };
+            String[] dibujos = { "pozo_luminoso", "pozo_penumbra", "espinas" };
+            String[] textos = {
+                "La Luminosidad puede extinguir a Sombra.",
+                "Las Penumbras pueden apagar a Luz.",
+                "Las puas danan a Luz y a Sombra." };
+
+            for (int i = 0; i < filas.length; i++) {
+                enCaja(g, dibujos[i], 420, filas[i], 300, 130);
+                parrafo(g, 640, filas[i] + 16, new String[] { textos[i] });
+            }
         }
 
         if (pagina > 0) {
@@ -216,10 +227,43 @@ public class DibujoMenu {
         g.drawImage(img, cx - ancho / 2, cy - alto / 2, ancho, alto, null);
     }
 
+    /**
+     * Encaja el dibujo dentro de la caja sin deformarlo: manda la medida que
+     * primero se queda sin sitio.
+     *
+     * Hace falta porque {@link #elemento} escala siempre por el alto, y los
+     * charcos son sprites muy anchos y bajos: la Luminosidad mide 236x45, o sea
+     * 5,24 de proporcion, asi que pedirle 120 de alto le daba 629 px de ancho y
+     * se comia el texto de al lado.
+     */
+    private static void enCaja(Graphics2D g, String nombre, int cx, int cy,
+                               int maxAncho, int maxAlto) {
+        BufferedImage img = Recursos.spriteRecortado(nombre);
+        if (img == null) {
+            return;
+        }
+
+        double escala = Math.min(maxAncho / (double) img.getWidth(),
+                                 maxAlto / (double) img.getHeight());
+        int ancho = (int) Math.round(img.getWidth() * escala);
+        int alto = (int) Math.round(img.getHeight() * escala);
+        g.drawImage(img, cx - ancho / 2, cy - alto / 2, ancho, alto, null);
+    }
+
     private static void etiqueta(Graphics2D g, String texto, int cx, int y) {
         g.setFont(FUENTE_TEXTO);
         g.setColor(PAPEL);
         espaciado(g, texto, cx, y, 6);
+    }
+
+    /** Igual que parrafo, pero cada linea centrada en esa columna. */
+    private static void parrafoCentrado(Graphics2D g, int cx, int y, String[] lineas) {
+        g.setFont(FUENTE_TEXTO);
+        g.setColor(PAPEL);
+        for (int i = 0; i < lineas.length; i++) {
+            int ancho = g.getFontMetrics().stringWidth(lineas[i]);
+            g.drawString(lineas[i], cx - ancho / 2, y + i * 46);
+        }
     }
 
     private static void parrafo(Graphics2D g, int x, int y, String[] lineas) {

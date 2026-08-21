@@ -112,14 +112,19 @@ public class PruebaPartida {
 
     /** Grupos abiertos para el jugador que se mueve: palancas puestas y el boton que pisa el otro. */
     static boolean[] abiertos(boolean[] encendidas, int[] aparcado, int seMueve) {
-        boolean[] abiertos = new boolean[Constantes.GRUPOS];
+        boolean[] abiertos = new boolean[Constantes.RANURAS];
         for (int i = 0; i < interruptores.size(); i++) {
             Elemento e = interruptores.get(i);
             if (e.grupo < 0 || e.grupo >= Constantes.GRUPOS) continue;
             if (encendidas[i]) abiertos[e.grupo] = true;
         }
         int otro = 1 - seMueve;
-        if (aparcado[otro] >= 0) abiertos[interruptores.get(aparcado[otro]).grupo] = true;
+        if (aparcado[otro] >= 0) {
+            Elemento e = interruptores.get(aparcado[otro]);
+            abiertos[e.grupo] = true;
+            // El paso a las puertas lo abre cualquier placa que pise el otro.
+            if (Constantes.esBoton(e.tipo)) abiertos[Constantes.GRUPO_AMBOS] = true;
+        }
         return abiertos;
     }
 
@@ -188,11 +193,14 @@ public class PruebaPartida {
 
     /** Grupos abiertos ahora mismo en la partida: palancas puestas y botones que pisa el otro. */
     static boolean[] abiertosDeVerdad(Jugador otro) {
-        boolean[] abiertos = new boolean[Constantes.GRUPOS];
+        boolean[] abiertos = new boolean[Constantes.RANURAS];
         for (Elemento e : interruptores) {
             if (e.grupo < 0 || e.grupo >= Constantes.GRUPOS) continue;
             if (Constantes.esPalanca(e.tipo) && e.encendida) abiertos[e.grupo] = true;
-            if (Constantes.esBoton(e.tipo) && tocando(otro, e)) abiertos[e.grupo] = true;
+            if (Constantes.esBoton(e.tipo) && tocando(otro, e)) {
+                abiertos[e.grupo] = true;
+                abiertos[Constantes.GRUPO_AMBOS] = true;
+            }
         }
         return abiertos;
     }

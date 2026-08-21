@@ -17,25 +17,25 @@ set "D=pruebas/datos"
 set "SAL=%TEMP%\luzysombra-prueba.txt"
 set /a fallos=0
 
-set "CMD=java -cp %CP% PruebaTeclado"
+set "CMD=java -DsinSonido=1 -cp %CP% PruebaTeclado"
 call :correr PruebaTeclado
-set "CMD=java -cp %CP% PruebaRaton"
+set "CMD=java -DsinSonido=1 -cp %CP% PruebaRaton"
 call :correr PruebaRaton
-set "CMD=java -Dnivel=%D%/pruebas.txt -cp %CP% PruebaFisica"
+set "CMD=java -DsinSonido=1 -Dnivel=%D%/pruebas.txt -cp %CP% PruebaFisica"
 call :correr PruebaFisica
-set "CMD=java -Dnivel=%D%/pruebas.txt -cp %CP% PruebaReglas"
+set "CMD=java -DsinSonido=1 -Dnivel=%D%/pruebas.txt -cp %CP% PruebaReglas"
 call :correr PruebaReglas
-set "CMD=java -cp %CP% PruebaMecanismos %D%/mecanismos.txt"
+set "CMD=java -DsinSonido=1 -cp %CP% PruebaMecanismos %D%/mecanismos.txt"
 call :correr PruebaMecanismos
-set "CMD=java -cp %CP% PruebaNiveles"
+set "CMD=java -DsinSonido=1 -cp %CP% PruebaNiveles"
 call :correr PruebaNiveles
-set "CMD=java -cp %CP% PruebaSalto %D%"
+set "CMD=java -DsinSonido=1 -cp %CP% PruebaSalto %D%"
 call :correr PruebaSalto
-set "CMD=java -Xss16m -cp %CP% PruebaJugable"
+set "CMD=java -DsinSonido=1 -Xss16m -cp %CP% PruebaJugable"
 call :correr PruebaJugable
-set "CMD=java -cp %CP% AutoJugador"
+set "CMD=java -DsinSonido=1 -cp %CP% AutoJugador"
 call :correr AutoJugador
-set "CMD=java -Xss64m -cp %CP% PruebaPartida"
+set "CMD=java -DsinSonido=1 -Xss64m -cp %CP% PruebaPartida"
 call :correr PruebaPartida
 
 if exist "%SAL%" del "%SAL%"

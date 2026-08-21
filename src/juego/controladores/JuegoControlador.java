@@ -15,11 +15,13 @@ import juego.objetos.Nivel;
 import juego.utilidades.Boton;
 import juego.utilidades.CargadorNivel;
 import juego.utilidades.Constantes;
+import juego.utilidades.Sonidos;
 
 public class JuegoControlador {
 
+    // Hay una casilla por nivel y ninguna de sobra: una casilla sin nivel
+    // detras se dibujaba con candado y parecia un nivel por desbloquear.
     private static final int TOTAL_NIVELES = 4;
-    private static final int CASILLAS = 5;
 
     private JFrame ventana;
     private Lienzo lienzo;
@@ -42,7 +44,7 @@ public class JuegoControlador {
     private long ultimoFrame;
     private double fps = 60;
 
-    private final Nivel[] previos = new Nivel[CASILLAS];
+    private final Nivel[] previos = new Nivel[TOTAL_NIVELES];
 
     private Boton btnJugar;
     private Boton btnTutorial;
@@ -105,21 +107,29 @@ public class JuegoControlador {
         // Despues de setVisible: si no, el panel no recibe el teclado.
         lienzo.requestFocusInWindow();
 
+        // Suena desde el menu y no para: es ambiente, no acompana a un nivel.
+        Sonidos.musicaEnBucle();
+
         new Timer(Constantes.MS_POR_FRAME, e -> actualizar()).start();
     }
 
     private void crearBotones() {
-        btnJugar = new Boton(620, 790, 680, 78, "JUGAR");
-        btnTutorial = new Boton(620, 918, 680, 78, "TUTORIAL");
+        // Uno al lado del otro y abajo del todo: la portada ocupa el centro
+        // con el logo, y apilados le caian encima.
+        btnJugar = new Boton(460, 930, 480, 78, "JUGAR");
+        btnTutorial = new Boton(980, 930, 480, 78, "TUTORIAL");
 
-        btnCasillas = new Boton[CASILLAS];
+        // Cuatro casillas en 2x2, centradas. Con la de mas eran 3 arriba y 2
+        // abajo; quitando una, esa fila de dos quedaba descolgada.
+        btnCasillas = new Boton[TOTAL_NIVELES];
         int ancho = 428;
         int alto = 272;
-        btnCasillas[0] = new Boton(128, 330, ancho, alto, "1");
-        btnCasillas[1] = new Boton(724, 330, ancho, alto, "2");
-        btnCasillas[2] = new Boton(1320, 330, ancho, alto, "3");
-        btnCasillas[3] = new Boton(380, 700, ancho, alto, "4");
-        btnCasillas[4] = new Boton(1068, 700, ancho, alto, "5");
+        int izq = (Constantes.ANCHO - 2 * ancho - 168) / 2;
+        int der = izq + ancho + 168;
+        btnCasillas[0] = new Boton(izq, 330, ancho, alto, "1");
+        btnCasillas[1] = new Boton(der, 330, ancho, alto, "2");
+        btnCasillas[2] = new Boton(izq, 700, ancho, alto, "3");
+        btnCasillas[3] = new Boton(der, 700, ancho, alto, "4");
 
         btnAnterior = new Boton(30, 505, 120, 110, "");
         btnSiguiente = new Boton(1780, 505, 120, 110, "");
@@ -206,10 +216,16 @@ public class JuegoControlador {
 
         partida.actualizar();
 
+        // Los dos sonidos de final de nivel van aqui y no en ControladorNivel
+        // porque dependen de los DOS personajes, no de uno. Y suenan una sola
+        // vez sin necesidad de bandera: al cambiar de estado, este metodo deja
+        // de entrar hasta que se reinicie.
         if (partida.hayMuerto()) {
             estado = Estado.PERDIDO;
+            Sonidos.reproducir(Sonidos.GAMEOVER);
         } else if (partida.hanGanado()) {
             estado = Estado.GANADO;
+            Sonidos.reproducir(Sonidos.PUERTA);   // solo con los dos en su puerta
         }
     }
 

@@ -26,7 +26,7 @@ public class PruebaJugable {
      * alguno de los dos, que a su vez abre camino hacia mas interruptores.
      */
     static boolean[] gruposAlcanzables(Nivel nv) {
-        boolean[] abiertos = new boolean[Constantes.GRUPOS];
+        boolean[] abiertos = new boolean[Constantes.RANURAS];
         while (true) {
             Map<Long,int[]> aL = alcance(nv, Jugador.LUZ, nv.luzX, nv.luzY, abiertos);
             Map<Long,int[]> aS = alcance(nv, Jugador.SOMBRA, nv.sombraX, nv.sombraY, abiertos);
@@ -34,8 +34,20 @@ public class PruebaJugable {
             boolean nuevo = false;
             for (Elemento e : nv.elementos) {
                 if (!Constantes.esBoton(e.tipo) && !Constantes.esPalanca(e.tipo)) continue;
-                if (e.grupo < 0 || e.grupo >= abiertos.length || abiertos[e.grupo]) continue;
-                if (toca(aL, e) || toca(aS, e)) { abiertos[e.grupo] = true; nuevo = true; }
+                if (e.grupo < 0 || e.grupo >= abiertos.length) continue;
+                // No basta con mirar el grupo: una placa aporta ademas el paso
+                // a las puertas, asi que hay que seguir mirandola aunque su
+                // grupo ya lo haya abierto una palanca.
+                boolean aporta = !abiertos[e.grupo]
+                    || (Constantes.esBoton(e.tipo) && !abiertos[Constantes.GRUPO_AMBOS]);
+                if (!aporta) continue;
+                if (toca(aL, e) || toca(aS, e)) {
+                    abiertos[e.grupo] = true;
+                    // Una placa al alcance abre ademas el paso a las puertas,
+                    // que no es de ningun grupo.
+                    if (Constantes.esBoton(e.tipo)) abiertos[Constantes.GRUPO_AMBOS] = true;
+                    nuevo = true;
+                }
             }
             if (!nuevo) return abiertos;
         }
@@ -92,7 +104,7 @@ public class PruebaJugable {
         if (salta) j.saltar();
         for (int i = 0; i < 260; i++) {
             j.velX = (i < hold) ? dir * Constantes.VEL_X : 0;
-            Colisiones.mover(j, al.mapas[v], al.plataformas.get(v));
+            Colisiones.mover(j, al.mapas[v], al.plataformas);
             if (al.mortal(j)) return;
             marcar(nv, enVuelo, j.x, j.y);
             if (j.enSuelo && i >= 2) { tocados.addAll(enVuelo); return; }

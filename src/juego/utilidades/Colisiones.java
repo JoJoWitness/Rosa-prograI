@@ -22,42 +22,51 @@ public class Colisiones {
         }
 
         moverEnX(j, mapa);
-        chocarPlataformasEnX(j, plataformas);
-
         moverEnY(j, mapa);
         chocarPlataformasEnY(j, plataformas);
     }
 
-    // Las plataformas moviles no estan en el mapa, se revisan aparte.
-    private static void chocarPlataformasEnX(Jugador j, List<Plataforma> plataformas) {
-        if (plataformas == null || j.velX == 0) {
+    // Las plataformas colgantes no estan en el mapa, se revisan aparte. El
+    // tablon esta girado, asi que no es un rectangulo: solo frena a quien cae
+    // desde arriba, y por debajo y por los lados se atraviesa. Se mira el
+    // cruce del frame y no el solapamiento, o cayendo a VEL_MAX_CAIDA se
+    // colaria de largo sin llegar a tocarlo.
+    private static void chocarPlataformasEnY(Jugador j, List<Plataforma> plataformas) {
+        if (plataformas == null || j.velY <= 0) {
             return;
         }
         for (Plataforma p : plataformas) {
-            if (!j.getRectangulo().intersects(p.getRectangulo())) {
+            if (!p.sujeta()) {
+                continue;                     // volcada: no sostiene a nadie
+            }
+            // Basta con que el cuerpo pise el tablon; no hace falta que lo
+            // pise el centro. Exigiendo el centro, al caer en una esquina el
+            // cuerpo apoyaba pero el centro quedaba fuera y se colaba de largo.
+            if (j.x + j.ancho <= p.x || j.x >= p.x + p.ancho) {
                 continue;
             }
-            j.x = (j.velX > 0) ? p.x - j.ancho : p.x + p.ancho;
-            j.velX = 0;
+
+            int sup = p.alturaEn(muestra(j, p));
+            int pies = j.y + j.alto;
+
+            // Con margen a los dos lados: sacar los pies de dentro de la
+            // tabla si se hundieron, y bajarlos a ella si se quedaron en el
+            // aire. Solo mientras el tablon sujete; pasada ANG_CAIDA suelta.
+            if (pies - j.velY <= sup + Constantes.PEGADO_TABLON
+                && pies >= sup - Constantes.PEGADO_TABLON) {
+                j.y = sup - j.alto;
+                j.velY = 0;
+                j.enSuelo = true;
+            }
         }
     }
 
-    private static void chocarPlataformasEnY(Jugador j, List<Plataforma> plataformas) {
-        if (plataformas == null) {
-            return;
-        }
-        for (Plataforma p : plataformas) {
-            if (!j.getRectangulo().intersects(p.getRectangulo())) {
-                continue;
-            }
-            if (j.velY > 0) {
-                j.y = p.y - j.alto;
-                j.enSuelo = true;
-            } else {
-                j.y = p.y + p.alto;
-            }
-            j.velY = 0;
-        }
+    // Donde se mide la altura del tablon: el centro del jugador, pero sin
+    // salirse de el. Cayendo en la punta, el centro esta fuera y hay que medir
+    // en el extremo o saldria una altura inventada por la pendiente.
+    private static int muestra(Jugador j, Plataforma p) {
+        int centro = j.x + j.ancho / 2;
+        return Math.max(p.x, Math.min(centro, p.x + p.ancho - 1));
     }
 
     private static void moverEnX(Jugador j, char[][] mapa) {

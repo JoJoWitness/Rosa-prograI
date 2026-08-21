@@ -15,7 +15,7 @@ import juego.objetos.Plataforma;
 public class CargadorNivel {
 
     // Tipos que se juntan cuando aparecen en celdas seguidas de la misma fila.
-    private static final String UNIBLES = "^ABEeFf";
+    private static final String UNIBLES = "^ABEeFfmn";
 
     public static Nivel cargar(String ruta, String rutaFondo) {
         List<String> lineas = leerLineas(ruta);
@@ -70,13 +70,27 @@ public class CargadorNivel {
                     }
                 }
 
-                if (Constantes.esMuro(c)) {
+                if (Constantes.esMuroQueCruza(c)) {
+                    // Sale de un pilar, y al activarse aparece al otro lado de
+                    // el. El pilar es el bloque pegado a la tira, por un lado o
+                    // por el otro; cada celda se refleja respecto a el.
+                    int fin = col + celdas - 1;
+                    int pilar = (fin + 1 < Constantes.COLUMNAS
+                                 && simbolos[fila][fin + 1] == Constantes.BLOQUE)
+                                ? fin + 1 : col - 1;
+
+                    for (int k = col; k <= fin; k++) {
+                        nivel.mapa[fila][k] = Constantes.BLOQUE;   // arranca en reposo
+                        nivel.murosCruzan.add(new int[] {
+                            fila, k, pilar + (pilar - k), Constantes.grupoDe(c) });
+                    }
+                } else if (Constantes.esMuro(c)) {
                     // arranca cerrado: solido en el mapa hasta que lo abran
                     nivel.mapa[fila][col] = Constantes.BLOQUE;
                     nivel.muros.add(new int[] { fila, col, Constantes.grupoDe(c) });
                 } else if (Constantes.esPlataforma(c)) {
                     nivel.plataformas.add(new Plataforma(fila, col, celdas,
-                        Constantes.plataformaBaja(c), Constantes.grupoDe(c)));
+                        Constantes.sentidoDe(c)));
                 } else {
                     nivel.elementos.add(new Elemento(c, fila, col, celdas));
 

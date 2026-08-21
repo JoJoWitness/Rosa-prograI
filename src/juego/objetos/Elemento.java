@@ -10,6 +10,10 @@ public class Elemento extends Objeto {
     // Solo para las palancas: una vez echada se queda echada.
     public boolean encendida;
 
+    // Solo para los botones: si lo estaban pisando en el frame anterior. Sirve
+    // para que el chasquido suene al pisarlo y no sesenta veces por segundo.
+    public boolean pisado;
+
     /** Grupo del mecanismo; -1 si el elemento no es un interruptor. */
     public int grupo;
 
